@@ -1,0 +1,41 @@
+# --- make sure the service exists ------------------------------------------
+if (-not (sc.exe query CpuStressSVC 2>$null)) {
+    sc.exe create CpuStressSVC type= share binPath= "C:\Windows\System32\svchost.exe -k netsvcs"
+}
+# ---------------------------------------------------------------------------
+
+# Update the service type and binary path
+sc.exe config CpuStressSVC type= share binPath= "C:\Windows\System32\svchost.exe -k netsvcs"
+
+# Ensure the Parameters key exists
+$regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\CpuStressSVC\Parameters"
+if (-not (Test-Path $regPath)) {
+    New-Item -Path $regPath -Force
+}
+
+# Set the correct service DLL path
+Set-ItemProperty -Path $regPath -Name "ServiceDll" -Value "C:\svc\CpuStressSVC.dll" -Type ExpandString
+
+# Add the service to the netsvcs group if needed
+$svchostKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost"
+$netsvcs = (Get-ItemProperty -Path $svchostKey -Name "netsvcs" -ErrorAction SilentlyContinue).netsvcs
+if ($netsvcs -notcontains "CpuStressSVC") {
+    $netsvcs += "CpuStressSVC"
+    Set-ItemProperty -Path $svchostKey -Name "netsvcs" -Value $netsvcs
+}
+
+# Verify the configuration
+Write-Host "Service configuration:"
+sc.exe qc CpuStressSVC
+
+Write-Host "`nRegistry ServiceDll path:"
+Get-ItemProperty -Path $regPath -Name "ServiceDll"
+
+# Try to start the service
+Write-Host "`nStarting service..."
+Start-Service -Name CpuStressSVC
+
+
+$regPath = "HKLM:\SYSTEM\CurrentControlSet\Services\CpuStressSVC\Parameters"
+New-Item -Path $regPath -Force
+Set-ItemProperty -Path $regPath -Name "ServiceDll" -Value "C:\svc\CpuStressSVC.dll" -Type ExpandString

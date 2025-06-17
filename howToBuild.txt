@@ -1,0 +1,29 @@
+Open VisualStudio Developer shell and run:
+verify that cl is 65 bits:
+cl /?
+to build all files in a folder, move to the destination folder and call the compile from there:
+
+pushd build
+cl /EHsc /LD ..\CpuStressSVC.cpp /link advapi32.lib /OUT:CpuStressSVC.dll
+popd
+copy .\build\CpuStressSVC.dll C:\svc\
+
+
+Advanced build:
+
+cl /EHsc /LD CpuStressSVC.cpp `
+   /Fo build\CpuStressSVC.obj `
+   /link /OUT:build\CpuStressSVC.dll `
+         /IMPLIB:build\CpuStressSVC.lib `
+         /PDB:build\CpuStressSVC.pdb `
+         /EXP:build\CpuStressSVC.exp
+
+
+Explanation of the extra switches
+
+/Fo path           – tell the compiler where to place the .obj
+/IMPLIB:path       – tell the linker where to place the .lib
+/PDB:path          – optional, keeps the debug database with the rest
+(If you also want the .exp file next to the others, add
+/EXP:build\CpuStressSVC.exp ; normally you can omit it because it is only an
+intermediate file.)
